@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - FxTemporaire
+  - projectile
+  - LFT
+  - LFM
+  - RFP
+  - RHP
+  - LPetella
+  - LFemur
+  - LTibia
+  - LR
+  - LeftHumerus
+  - LU
+  - LHP
+  - LHM
+  - LHC
+  - Left Leg
+  - ALPG
+  - RR
+  - RU
+  - ARPG
+  - RightHumerus
+  - Pelvis
+  - RHC
+  - RHM
+  - Skull
+  - RFemur
+  - RFibula
+  - LFibula
+  - RTibia
+  - Thoracic Cage
+  - RPetella
+  - Cervical Vertebrae
+  - Thoracic Vertebrae
+  - LFP
+  - Lumbar Vertebra
+  - RFT
+  - RFM
+  - Vertebrae
+  - Fused Sacral Vertebrae
+  - TeleportIgnore
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
