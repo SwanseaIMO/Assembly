@@ -1,4 +1,4 @@
-﻿// Interactable Object|Interactions|30030
+﻿// Interactable Object|Interactions|30080
 namespace VRTK
 {
     using UnityEngine;
@@ -63,7 +63,9 @@ namespace VRTK
         {
             NoDrop,
             DropAnywhere,
-            DropValidSnapDropZone
+            DropValidSnapDropZone,
+            NoCollisionDrop,
+            DropClearAndValidDropSnap
         }
 
         [Tooltip("If this is checked then the interactable object script will be disabled when the object is not being interacted with. This will eliminate the potential number of calls the interactable objects make each frame.")]
@@ -202,6 +204,7 @@ namespace VRTK
         protected VRTK_SnapDropZone storedSnapDropZone;
         protected Vector3 previousLocalScale = Vector3.zero;
         protected List<GameObject> currentIgnoredColliders = new List<GameObject>();
+        protected bool Colliding = false;
         protected bool startDisabled = false;
 
         public virtual void OnInteractableObjectTouched(InteractableObjectEventArgs e)
@@ -550,7 +553,7 @@ namespace VRTK
                 return true;
             }
 
-            var controllerHand = VRTK_DeviceFinder.GetControllerHandType(controllerCheck.ToString().Replace("Only", ""));
+            SDK_BaseController.ControllerHand controllerHand = VRTK_DeviceFinder.GetControllerHandType(controllerCheck.ToString().Replace("Only", ""));
             return (VRTK_DeviceFinder.IsControllerOfHand(actualController, controllerHand));
         }
 
@@ -577,8 +580,8 @@ namespace VRTK
         /// </summary>
         public virtual void ForceStopSecondaryGrabInteraction()
         {
-            var grabbingObject = GetSecondaryGrabbingObject();
-            if (grabbingObject)
+            GameObject grabbingObject = GetSecondaryGrabbingObject();
+            if (grabbingObject != null)
             {
                 grabbingObject.GetComponent<VRTK_InteractGrab>().ForceRelease();
             }
@@ -597,7 +600,7 @@ namespace VRTK
         /// </summary>
         public virtual void UnregisterTeleporters()
         {
-            foreach (var teleporter in VRTK_ObjectCache.registeredTeleporters)
+            foreach (VRTK_BasicTeleport teleporter in VRTK_ObjectCache.registeredTeleporters)
             {
                 teleporter.Teleporting -= new TeleportEventHandler(OnTeleporting);
                 teleporter.Teleported -= new TeleportEventHandler(OnTeleported);
@@ -691,6 +694,11 @@ namespace VRTK
                     return true;
                 case ValidDropTypes.DropValidSnapDropZone:
                     return hoveredOverSnapDropZone;
+                case ValidDropTypes.NoCollisionDrop:
+                    return !Colliding;
+                case ValidDropTypes.DropClearAndValidDropSnap:
+                    if(hoveredOverSnapDropZone) return hoveredOverSnapDropZone;
+                    return !Colliding;
             }
             return false;
         }
@@ -701,16 +709,16 @@ namespace VRTK
         /// <returns>Returns true if the object can be grabbed by a secondary controller whilst already being grabbed and the object will swap controllers. Returns false if the object cannot be swapped.</returns>
         public virtual bool IsSwappable()
         {
-            return (secondaryGrabActionScript ? secondaryGrabActionScript.IsSwappable() : false);
+            return (secondaryGrabActionScript != null ? secondaryGrabActionScript.IsSwappable() : false);
         }
 
         /// <summary>
         /// The PerformSecondaryAction method returns whether the object has a secondary action that can be performed when grabbing the object with a secondary controller.
         /// </summary>
-        /// <returns>Returns true if the obejct has a secondary action, returns false if it has no secondary action or is swappable.</returns>
+        /// <returns>Returns true if the object has a secondary action, returns false if it has no secondary action or is swappable.</returns>
         public virtual bool PerformSecondaryAction()
         {
-            return (!GetSecondaryGrabbingObject() && secondaryGrabActionScript ? secondaryGrabActionScript.IsActionable() : false);
+            return (GetGrabbingObject() != null && GetSecondaryGrabbingObject() == null && secondaryGrabActionScript != null ? secondaryGrabActionScript.IsActionable() : false);
         }
 
         /// <summary>
@@ -718,13 +726,28 @@ namespace VRTK
         /// </summary>
         public virtual void ResetIgnoredColliders()
         {
+            //Go through all the existing set up ignored colliders and reset their collision state
+            for (int x = 0; x < currentIgnoredColliders.Count; x++)
+            {
+                if (currentIgnoredColliders[x] != null)
+                {
+                    Collider[] touchingColliders = currentIgnoredColliders[x].GetComponentsInChildren<Collider>();
+                    for (int i = 0; i < ignoredColliders.Length; i++)
+                    {
+                        for (int j = 0; j < touchingColliders.Length; j++)
+                        {
+                            Physics.IgnoreCollision(touchingColliders[j], ignoredColliders[i], false);
+                        }
+                    }
+                }
+            }
             currentIgnoredColliders.Clear();
         }
 
         protected virtual void Awake()
         {
             interactableRigidbody = GetComponent<Rigidbody>();
-            if (interactableRigidbody)
+            if (interactableRigidbody != null)
             {
                 interactableRigidbody.maxAngularVelocity = float.MaxValue;
             }
@@ -768,12 +791,12 @@ namespace VRTK
 
         protected virtual void FixedUpdate()
         {
-            if (trackPoint && grabAttachMechanicScript)
+            if (trackPoint != null && grabAttachMechanicScript != null)
             {
                 grabAttachMechanicScript.ProcessFixedUpdate();
             }
 
-            if (secondaryGrabActionScript)
+            if (secondaryGrabActionScript != null)
             {
                 secondaryGrabActionScript.ProcessFixedUpdate();
             }
@@ -784,12 +807,12 @@ namespace VRTK
             AttemptSetGrabMechanic();
             AttemptSetSecondaryGrabAction();
 
-            if (trackPoint && grabAttachMechanicScript)
+            if (trackPoint != null && grabAttachMechanicScript != null)
             {
                 grabAttachMechanicScript.ProcessUpdate();
             }
 
-            if (secondaryGrabActionScript)
+            if (secondaryGrabActionScript != null)
             {
                 secondaryGrabActionScript.ProcessUpdate();
             }
@@ -810,7 +833,7 @@ namespace VRTK
                 transform.SetParent(previousParent);
                 forcedDropped = false;
             }
-            if (interactableRigidbody)
+            if (interactableRigidbody != null)
             {
                 interactableRigidbody.isKinematic = previousKinematicState;
             }
@@ -822,7 +845,7 @@ namespace VRTK
 
         protected virtual void InitialiseHighlighter()
         {
-            if (touchHighlightColor != Color.clear && !objectHighlighter)
+            if (touchHighlightColor != Color.clear && objectHighlighter == null)
             {
                 autoHighlighter = false;
                 objectHighlighter = VRTK_BaseHighlighter.GetActiveHighlighter(gameObject);
@@ -869,7 +892,7 @@ namespace VRTK
         {
             if (isGrabbable && grabAttachMechanicScript == null)
             {
-                var setGrabMechanic = GetComponent<VRTK_BaseGrabAttach>();
+                VRTK_BaseGrabAttach setGrabMechanic = GetComponent<VRTK_BaseGrabAttach>();
                 if (!setGrabMechanic)
                 {
                     setGrabMechanic = gameObject.AddComponent<VRTK_FixedJointGrabAttach>();
@@ -888,8 +911,8 @@ namespace VRTK
 
         protected virtual void ForceReleaseGrab()
         {
-            var grabbingObject = GetGrabbingObject();
-            if (grabbingObject)
+            GameObject grabbingObject = GetGrabbingObject();
+            if (grabbingObject != null)
             {
                 grabbingObject.GetComponent<VRTK_InteractGrab>().ForceRelease();
             }
@@ -919,7 +942,7 @@ namespace VRTK
                 grabbingObjects.Add(currentGrabbingObject);
                 secondaryControllerAttachPoint = CreateAttachPoint(currentGrabbingObject.name, "Secondary", currentGrabbingObject.transform);
 
-                if (secondaryGrabActionScript)
+                if (secondaryGrabActionScript != null)
                 {
                     secondaryGrabActionScript.Initialise(this, GetGrabbingObject().GetComponent<VRTK_InteractGrab>(), GetSecondaryGrabbingObject().GetComponent<VRTK_InteractGrab>(), primaryControllerAttachPoint, secondaryControllerAttachPoint);
                 }
@@ -947,7 +970,7 @@ namespace VRTK
                 grabbingObjects.Remove(previousGrabbingObject);
                 Destroy(secondaryControllerAttachPoint.gameObject);
                 secondaryControllerAttachPoint = null;
-                if (secondaryGrabActionScript)
+                if (secondaryGrabActionScript != null)
                 {
                     secondaryGrabActionScript.ResetAction();
                 }
@@ -956,9 +979,10 @@ namespace VRTK
 
         protected virtual void UnpauseCollisions()
         {
-            foreach (Rigidbody rb in GetComponentsInChildren<Rigidbody>())
+            Rigidbody[] childRigidbodies = GetComponentsInChildren<Rigidbody>();
+            for (int i = 0; i < childRigidbodies.Length; i++)
             {
-                rb.detectCollisions = true;
+                childRigidbodies[i].detectCollisions = true;
             }
         }
 
@@ -967,7 +991,7 @@ namespace VRTK
             AddTrackPoint(currentGrabbingObject);
             primaryControllerAttachPoint = CreateAttachPoint(GetGrabbingObject().name, "Original", trackPoint);
 
-            if (grabAttachMechanicScript)
+            if (grabAttachMechanicScript != null)
             {
                 grabAttachMechanicScript.SetTrackPoint(trackPoint);
                 grabAttachMechanicScript.SetInitialAttachPoint(primaryControllerAttachPoint);
@@ -976,7 +1000,7 @@ namespace VRTK
 
         protected virtual Transform CreateAttachPoint(string namePrefix, string nameSuffix, Transform origin)
         {
-            var attachPoint = new GameObject(VRTK_SharedMethods.GenerateVRTKObjectName(true, namePrefix, nameSuffix, "Controller", "AttachPoint")).transform;
+            Transform attachPoint = new GameObject(VRTK_SharedMethods.GenerateVRTKObjectName(true, namePrefix, nameSuffix, "Controller", "AttachPoint")).transform;
             attachPoint.parent = transform;
             attachPoint.position = origin.position;
             attachPoint.rotation = origin.rotation;
@@ -985,10 +1009,10 @@ namespace VRTK
 
         protected virtual void AddTrackPoint(GameObject currentGrabbingObject)
         {
-            var grabScript = currentGrabbingObject.GetComponent<VRTK_InteractGrab>();
-            var controllerPoint = ((grabScript && grabScript.controllerAttachPoint) ? grabScript.controllerAttachPoint.transform : currentGrabbingObject.transform);
+            VRTK_InteractGrab grabScript = currentGrabbingObject.GetComponent<VRTK_InteractGrab>();
+            Transform controllerPoint = ((grabScript && grabScript.controllerAttachPoint) ? grabScript.controllerAttachPoint.transform : currentGrabbingObject.transform);
 
-            if (grabAttachMechanicScript)
+            if (grabAttachMechanicScript != null)
             {
                 trackPoint = grabAttachMechanicScript.CreateTrackPoint(controllerPoint, gameObject, currentGrabbingObject, ref customTrackPoint);
             }
@@ -996,7 +1020,7 @@ namespace VRTK
 
         protected virtual void RemoveTrackPoint()
         {
-            if (customTrackPoint && trackPoint)
+            if (customTrackPoint && trackPoint != null)
             {
                 Destroy(trackPoint.gameObject);
             }
@@ -1004,7 +1028,8 @@ namespace VRTK
             {
                 trackPoint = null;
             }
-            if (primaryControllerAttachPoint)
+
+            if (primaryControllerAttachPoint != null)
             {
                 Destroy(primaryControllerAttachPoint.gameObject);
             }
@@ -1021,9 +1046,9 @@ namespace VRTK
 
         protected virtual void OnTeleported(object sender, DestinationMarkerEventArgs e)
         {
-            if (grabAttachMechanicScript && grabAttachMechanicScript.IsTracked() && stayGrabbedOnTeleport && trackPoint)
+            if (grabAttachMechanicScript != null && grabAttachMechanicScript.IsTracked() && stayGrabbedOnTeleport && trackPoint != null)
             {
-                var actualController = VRTK_DeviceFinder.GetActualController(GetGrabbingObject());
+                GameObject actualController = VRTK_DeviceFinder.GetActualController(GetGrabbingObject());
                 transform.position = (actualController ? actualController.transform.position : transform.position);
             }
         }
@@ -1031,7 +1056,7 @@ namespace VRTK
         protected virtual IEnumerator RegisterTeleportersAtEndOfFrame()
         {
             yield return new WaitForEndOfFrame();
-            foreach (var teleporter in VRTK_ObjectCache.registeredTeleporters)
+            foreach (VRTK_BasicTeleport teleporter in VRTK_ObjectCache.registeredTeleporters)
             {
                 teleporter.Teleporting += new TeleportEventHandler(OnTeleporting);
                 teleporter.Teleported += new TeleportEventHandler(OnTeleported);
@@ -1040,12 +1065,15 @@ namespace VRTK
 
         protected virtual void ResetUseState(GameObject checkObject)
         {
-            var usingObjectCheck = checkObject.GetComponent<VRTK_InteractUse>();
-            if (usingObjectCheck)
+            if (checkObject != null)
             {
-                if (holdButtonToUse)
+                VRTK_InteractUse usingObjectCheck = checkObject.GetComponent<VRTK_InteractUse>();
+                if (usingObjectCheck != null)
                 {
-                    usingObjectCheck.ForceStopUsing();
+                    if (holdButtonToUse)
+                    {
+                        usingObjectCheck.ForceStopUsing();
+                    }
                 }
             }
         }
@@ -1072,7 +1100,7 @@ namespace VRTK
         {
             for (int i = 0; i < touchingObjects.Count; i++)
             {
-                var touchingObject = touchingObjects[i];
+                GameObject touchingObject = touchingObjects[i];
 
                 if (touchingObject.activeInHierarchy || forceDisabled)
                 {
@@ -1083,7 +1111,7 @@ namespace VRTK
 
         protected virtual void StopGrabbingInteractions()
         {
-            var grabbingObject = GetGrabbingObject();
+            GameObject grabbingObject = GetGrabbingObject();
 
             if (grabbingObject != null && (grabbingObject.activeInHierarchy || forceDisabled))
             {
@@ -1111,7 +1139,7 @@ namespace VRTK
                     LoadPreviousState();
                     break;
                 case VRTK_SnapDropZone.SnapTypes.UseJoint:
-                    var snapDropZoneJoint = storedSnapDropZone.GetComponent<Joint>();
+                    Joint snapDropZoneJoint = storedSnapDropZone.GetComponent<Joint>();
                     if (snapDropZoneJoint)
                     {
                         snapDropZoneJoint.connectedBody = null;
@@ -1130,14 +1158,38 @@ namespace VRTK
 
         protected virtual void ResetUsingObject()
         {
-            if (usingObject)
+            if (usingObject != null)
             {
-                var usingObjectScript = usingObject.GetComponent<VRTK_InteractUse>();
-                if (usingObjectScript)
+                VRTK_InteractUse usingObjectScript = usingObject.GetComponent<VRTK_InteractUse>();
+                if (usingObjectScript != null)
                 {
                     usingObjectScript.ForceResetUsing();
                 }
             }
         }
+
+        protected virtual void OnCollisionEnter()
+        {
+            CollisionState(true);
+        }
+        protected virtual void OnCollisionStay()
+        {
+            CollisionState(true);
+        }
+        protected virtual void OnCollisionExit()
+        {
+            CollisionState(false);
+        }
+
+        protected virtual void CollisionState(bool TorF)
+        {
+            Colliding = TorF;
+        }
+
+        protected virtual void HighlightError()
+        {
+
+        }
+
     }
 }

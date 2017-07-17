@@ -132,9 +132,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Assembly.Plugins.csproj">
+      <Project>{EE53225F-6528-6969-B289-22032F353AEC}</Project>
+      <Name>Assembly.Plugins</Name>
+    </ProjectReference>
     <ProjectReference Include="Assembly.csproj">
       <Project>{2167C0BD-EB00-B321-A60C-81EB7E345F55}</Project>
       <Name>Assembly</Name>
+    </ProjectReference>
+    <ProjectReference Include="Assembly.Editor.Plugins.csproj">
+      <Project>{2AC302AD-7AE6-49AE-351C-F9319EDA86E7}</Project>
+      <Name>Assembly.Editor.Plugins</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +161,7 @@
     <Compile Include="Assets\VRTK\Editor\VRTK_UpdatePrompt.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Plugins\Isolationist\readme.txt" />
     <None Include="Assets\SteamVR\InteractionSystem\Core\Shaders\SeeThru.shader" />
     <None Include="Assets\SteamVR\InteractionSystem\Core\Shaders\Silhouette.shader" />
     <None Include="Assets\SteamVR\InteractionSystem\Hints\Shaders\ControllerButtonHints.shader" />

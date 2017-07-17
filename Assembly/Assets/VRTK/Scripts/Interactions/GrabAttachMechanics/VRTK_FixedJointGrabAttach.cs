@@ -18,7 +18,17 @@ namespace VRTK.GrabAttachMechanics
         protected override void CreateJoint(GameObject obj)
         {
             givenJoint = obj.AddComponent<FixedJoint>();
-            givenJoint.breakForce = (grabbedObjectScript.IsDroppable() ? breakForce : Mathf.Infinity);
+            if (grabbedObjectScript.validDrop == VRTK_InteractableObject.ValidDropTypes.NoCollisionDrop)
+            {
+                givenJoint.breakForce = Mathf.Infinity;
+            }else if (grabbedObjectScript.validDrop == VRTK_InteractableObject.ValidDropTypes.DropClearAndValidDropSnap)
+            {
+                givenJoint.breakForce = Mathf.Infinity;
+            }
+            else
+            {
+                givenJoint.breakForce = (grabbedObjectScript.IsDroppable() ? breakForce : Mathf.Infinity);
+            }
             base.CreateJoint(obj);
         }
     }
