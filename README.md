@@ -4,12 +4,12 @@ As part of the IMO project for Swansea University this is the Assembly App helps
 The builds of the excitable can be found in the builds folder
 
 # Aim
-The AIM of this app is to create a game base learning experience to.
-•	use a vr platform
-•	allow the user to pick up and move parts
-•	assemble parts together 
-•	to get win states and timers for doing so
-•	to have question or associated label to place during the app
+The AIM of this app is to create a game base learning experience to. 
+•	use a vr platform  
+•	allow the user to pick up and move parts  
+•	assemble parts together   
+•	to get win states and timers for doing so  
+•	to have question or associated label to place during the app  
 
 # Current Scenes
 Bones – Anatomy App
@@ -20,7 +20,7 @@ This project is open to contributions from outside base on request.
 This project is open source so please copy and modify and share a like with the CC licenses listed.
 
 # Dependencies
-Unity 5.6.0f3 – built with educational, but should work with personal
+Unity 2017– built with educational, but should work with personal
 SteamVR – Plugin in project
 VRTK – Plugin in project
 
