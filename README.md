@@ -20,9 +20,9 @@ This project is open to contributions from outside base on request.
 This project is open source so please copy and modify and share a like with the CC licenses listed.
 
 # Dependencies
-Unity 2017– built with educational, but should work with personal
-SteamVR – Plugin in project
-VRTK – Plugin in project
+Unity 2017– built with educational, but should work with personal.  
+SteamVR – Plugin in project  
+VRTK – Plugin in project  
 
 # Attributions
 
