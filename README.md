@@ -1,7 +1,7 @@
 # Assembly
 Assembly - App for VR
 As part of the IMO project for Swansea University this is the Assembly App helps bring game based learning. This project file will have examples of the assembly app with scenes with predesigned assembly’s
-The builds of the excitable can be found in the builds folder
+The builds of the project can be found in the builds folder
 
 # Aim
 The AIM of this app is to create a game base learning experience to. 
