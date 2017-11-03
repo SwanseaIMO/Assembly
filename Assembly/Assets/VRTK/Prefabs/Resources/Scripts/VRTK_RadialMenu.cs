@@ -27,7 +27,9 @@ namespace VRTK
         [System.Serializable]
         public class RadialMenuButton
         {
+            public bool iconOrText;
             public Sprite ButtonIcon;
+            public string ButtonText;
             public UnityEvent OnClick = new UnityEvent();
             public UnityEvent OnHold = new UnityEvent();
             public UnityEvent OnHoverEnter = new UnityEvent();
@@ -221,13 +223,20 @@ namespace VRTK
 
                 //Place and populate Button Icon
                 GameObject buttonIcon = newButton.GetComponentInChildren<RadialButtonIcon>().gameObject;
-                if (buttons[i].ButtonIcon == null)
+                if (buttons[i].ButtonIcon == null && buttons[i].ButtonText == null)
                 {
                     buttonIcon.SetActive(false);
                 }
                 else
                 {
-                    buttonIcon.GetComponent<Image>().sprite = buttons[i].ButtonIcon;
+                    if (!buttons[i].iconOrText)
+                    {
+                        buttonIcon.GetComponent<Image>().sprite = buttons[i].ButtonIcon;
+                    }
+                    else
+                    {
+                        buttonIcon.GetComponent<Text>().text = buttons[i].ButtonText;
+                    }
                     buttonIcon.transform.localPosition = new Vector2(-1 * ((newButton.GetComponent<RectTransform>().rect.width / 2f) - (circle.thickness / 2f)), 0);
                     //Min icon size from thickness and arc
                     float scale1 = Mathf.Abs(circle.thickness);

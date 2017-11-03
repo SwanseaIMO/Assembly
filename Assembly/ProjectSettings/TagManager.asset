@@ -44,6 +44,7 @@ TagManager:
   - Vertebrae
   - Fused Sacral Vertebrae
   - TeleportIgnore
+  - IgnoreWhileTouching
   layers:
   - Default
   - TransparentFX
